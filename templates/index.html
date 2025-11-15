@@ -1,49 +1,16 @@
 {% extends "layout.html" %}
 {% block content %}
 
-<div class="row mb-4">
-  <div class="col-md-3 mb-3">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h6 class="text-muted">Sales Today</h6>
-        <h3>${{ "%.2f"|format(stats.total_sales_today) }}</h3>
-      </div>
-    </div>
-  </div>
+<h2 class="mb-4">📊 AI E-Commerce Overview</h2>
 
-  <div class="col-md-3 mb-3">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h6 class="text-muted">Orders Today</h6>
-        <h3>{{ stats.orders_today }}</h3>
-      </div>
-    </div>
-  </div>
+<button class="btn btn-primary mb-3" onclick="refreshData()">🔄 Refresh Data</button>
 
-  <div class="col-md-3 mb-3">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h6 class="text-muted">Active Listings</h6>
-        <h3>{{ stats.active_listings }}</h3>
-      </div>
-    </div>
-  </div>
+<div id="stats" class="row"></div>
 
-  <div class="col-md-3 mb-3">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h6 class="text-muted">AI Status</h6>
-        <h3>
-          {% if stats.ai_status == "RUNNING" %}
-          🟢 RUNNING
-          {% else %}
-          🔴 STOPPED
-          {% endif %}
-        </h3>
-        <small class="text-muted">Last sync: {{ stats.last_sync }}</small>
-      </div>
-    </div>
-  </div>
-</div>
+<h4 class="mt-4">Sales Chart</h4>
+<canvas id="salesChart" height="120"></canvas>
+
+<h4 class="mt-4">Orders Chart</h4>
+<canvas id="orderChart" height="120"></canvas>
 
 {% endblock %}
