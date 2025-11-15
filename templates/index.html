@@ -1,16 +1,17 @@
 {% extends "layout.html" %}
 {% block content %}
 
-<h2 class="mb-4">📊 AI E-Commerce Overview</h2>
+<h2 class="mb-4">📊 AI E-Commerce Control Center</h2>
 
 <button class="btn btn-primary mb-3" onclick="refreshData()">🔄 Refresh Data</button>
 
-<div id="stats" class="row"></div>
+<!-- TOP STATS -->
+<div id="top-stats" class="row mb-4"></div>
 
-<h4 class="mt-4">Sales Chart</h4>
-<canvas id="salesChart" height="120"></canvas>
-
-<h4 class="mt-4">Orders Chart</h4>
-<canvas id="orderChart" height="120"></canvas>
-
-{% endblock %}
+<!-- TABS -->
+<ul class="nav nav-tabs mb-3" id="dashTabs">
+  <li class="nav-item">
+    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overviewTab">Overview</button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#channelsTab">Channels</button>
