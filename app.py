@@ -1,39 +1,51 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, session, jsonify
 from datetime import datetime
+from functools import wraps
 
 app = Flask(__name__)
+app.secret_key = "super_secret_key_change_this"
 
-def get_mock_stats():
-    stats = {
-        "total_sales_today": 1234.56,
-        "orders_today": 17,
-        "active_listings": 245,
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user" not in session:
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return wrapper
+
+def get_dashboard_data():
+    return {
+        "total_sales_today": 1450.00,
+        "orders_today": 23,
+        "active_listings": 281,
         "ai_status": "RUNNING",
         "last_sync": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "sales_chart": [50, 100, 300, 400, 600],
+        "order_chart": [1, 3, 4, 5, 10]
     }
 
-    recent_orders = [
-        {"id": "EBAY-1001", "platform": "eBay", "amount": 79.99, "status": "Shipped"},
-        {"id": "EBAY-1002", "platform": "eBay", "amount": 24.50, "status": "Paid"},
-        {"id": "SHOP-2001", "platform": "Shopify", "amount": 129.00, "status": "Processing"},
-        {"id": "AMZ-3001", "platform": "Amazon", "amount": 59.99, "status": "Delivered"},
-    ]
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        if request.form["username"] == "admin" and request.form["password"] == "1234":
+            session["user"] = "admin"
+            return redirect("/")
+    return render_template("login.html")
 
-    ai_tasks = [
-        {"task": "Repricing", "status": "OK", "last_run": "5 min ago"},
-        {"task": "Inventory Sync", "status": "OK", "last_run": "10 min ago"},
-        {"task": "Order Import", "status": "OK", "last_run": "2 min ago"},
-    ]
-
-    return stats, recent_orders, ai_tasks
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
 
 @app.route("/")
+@login_required
 def index():
-    stats, recent_orders, ai_tasks = get_mock_stats()
-    return render_template("index.html",
-                            stats=stats,
-                            recent_orders=recent_orders,
-                            ai_tasks=ai_tasks)
+    return render_template("index.html")
+
+@app.route("/api/data")
+@login_required
+def data():
+    return jsonify(get_dashboard_data())
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
