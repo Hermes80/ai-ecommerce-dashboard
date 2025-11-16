@@ -114,3 +114,27 @@ def run_auto_repricing(ctx):
         "actions": actions,
         "note": "Dynamic AI repricing with competitor detection."
     }
+def run_ai_prediction(ctx):
+    """
+    Global trend-based prediction:
+    - Looks at trending items on eBay (not just your account)
+    - Returns top items with a simple 'opportunity' tag
+    """
+    trending = get_trending_ebay_items()
+
+    actions = []
+    for t in trending[:20]:
+        actions.append({
+            "feature": "auto_predict",
+            "title": t["title"],
+            "price": t["price"],
+            "url": t["url"],
+            "prediction": "High-trend item on eBay – consider sourcing & listing."
+        })
+
+    return {
+        "feature": "auto_predict",
+        "count": len(actions),
+        "actions": actions,
+        "note": "Based on global eBay search, not your account data."
+}
