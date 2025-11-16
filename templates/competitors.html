@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h2 class="mb-4">📊 Competitor Monitor</h2>
+
+<div class="mb-3">
+  <input id="comp-keyword" class="form-control" placeholder="Enter keyword or product title…">
+  <button class="btn btn-primary mt-2" onclick="loadCompetitors()">Search Competitors</button>
+</div>
+
+<div id="competitor-results"></div>
+
+<script src="{{ url_for('static', filename='competitors.js') }}"></script>
+
+{% endblock %}
