@@ -15,7 +15,7 @@ DEFAULT_SETTINGS = {
     "live_mode": False   # ⭐ NEW
 }
 
-}
+
 
 def load_settings():
     if not os.path.exists(SETTINGS_FILE):
