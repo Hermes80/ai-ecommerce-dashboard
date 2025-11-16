@@ -101,3 +101,52 @@ def get_orders():
                 "status": o.findtext("e:OrderStatus", default="", namespaces=ns)
             })
     return orders
+# ==========================
+# REVISE ITEM PRICE (TRADING API)
+# ==========================
+
+def revise_item_price_trading(item_id, new_price):
+    """
+    Use the Trading API ReviseItem call to change the price
+    of a fixed-price listing on eBay.
+    This assumes item_id is a valid eBay ItemID and new_price is a float.
+    """
+    headers = {
+        "X-EBAY-API-CALL-NAME": "ReviseItem",
+        "X-EBAY-API-SITEID": "0",
+        "X-EBAY-API-COMPATIBILITY-LEVEL": "967",
+        "X-EBAY-API-IAF-TOKEN": EBAY_TOKEN,
+        "Content-Type": "text/xml",
+    }
+
+    body = f"""<?xml version="1.0" encoding="utf-8"?>
+        <ReviseItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+            <RequesterCredentials>
+                <eBayAuthToken>{EBAY_TOKEN}</eBayAuthToken>
+            </RequesterCredentials>
+            <Item>
+                <ItemID>{item_id}</ItemID>
+                <StartPrice>{new_price}</StartPrice>
+            </Item>
+        </ReviseItemRequest>
+    """
+
+    r = requests.post(EBAY_TRADING_URL, data=body, headers=headers)
+
+    if r.status_code != 200:
+        return {
+            "success": False,
+            "status_code": r.status_code,
+            "raw": r.text[:500]
+        }
+
+    try:
+        root = ET.fromstring(r.text)
+        ns = {"e": "urn:ebay:apis:eBLBaseComponents"}
+        ack = root.findtext("e:Ack", default="", namespaces=ns)
+        if ack and ack.upper() == "SUCCESS":
+            return {"success": True, "ack": ack}
+        else:
+            return {"success": False, "ack": ack, "raw": r.text[:500]}
+    except Exception as e:
+        return {"success": False, "error": str(e), "raw": r.text[:500]}
