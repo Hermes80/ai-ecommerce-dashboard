@@ -1,37 +1,22 @@
 from flask import Flask, render_template, request, redirect, session, jsonify
 from datetime import datetime
 from functools import wraps
+from ebay_api import get_active_listings, get_orders
 
 app = Flask(__name__)
 app.secret_key = "super_secret_key_change_this"
 
-# In-memory log for AI console (simple for now)
 ai_command_log = []
 
 # ---------------------------
-# LOGIN PROTECTION
+# DASHBOARD DATA (REAL EBAY)
 # ---------------------------
 
-def login_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if "user" not in session:
-            return redirect("/login")
-        return f(*args, **kwargs)
-    return wrapper
-
-# ---------------------------
-# MOCK DATA (SHAPED FOR REAL APIS LATER)
-
- def get_dashboard_data():
-    from ebay_api import get_active_listings, get_orders
-
-    # Get eBay data
+def get_dashboard_data():
     ebay_listings = get_active_listings()
     ebay_orders = get_orders()
 
-    # Basic totals
-    ebay_sales = len(ebay_orders) * 10.00  # placeholder
+    ebay_sales = len(ebay_orders) * 10.00
     ebay_orders_count = len(ebay_orders)
     ebay_listings_count = len(ebay_listings)
 
@@ -66,10 +51,18 @@ def login_required(f):
         "ai_command_log": ai_command_log[-20:]
     }
     return data
-    
+
 # ---------------------------
-# ROUTES
+# LOGIN SYSTEM
 # ---------------------------
+
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user" not in session:
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return wrapper
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -84,6 +77,10 @@ def logout():
     session.clear()
     return redirect("/login")
 
+# ---------------------------
+# MAIN DASHBOARD
+# ---------------------------
+
 @app.route("/")
 @login_required
 def index():
@@ -94,7 +91,10 @@ def index():
 def data():
     return jsonify(get_dashboard_data())
 
-# AI Command Console (6) – just logs commands for now
+# ---------------------------
+# AI Console
+# ---------------------------
+
 @app.route("/api/ai/command", methods=["POST"])
 @login_required
 def ai_command():
@@ -103,9 +103,13 @@ def ai_command():
         ai_command_log.append({
             "command": cmd,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "status": "queued"  # later you can wire this to your real AI
+            "status": "queued"
         })
     return jsonify({"ok": True, "log": ai_command_log[-20:]})
+
+# ---------------------------
+# START SERVER
+# ---------------------------
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
