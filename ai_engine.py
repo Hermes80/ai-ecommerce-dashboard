@@ -5,6 +5,7 @@ from ebay_api import get_active_listings, get_orders, revise_item_price_trading
 from supplier_sourcing import build_supplier_searches
 from competitor_detection import get_competitor_prices
 from pricing_rules import estimate_cost, apply_pricing_rules
+from inventory_sync import sync_all_channels
 
 def run_auto_repricing(ctx):
     """
@@ -138,3 +139,12 @@ def run_ai_prediction(ctx):
         "actions": actions,
         "note": "Based on global eBay search, not your account data."
 }
+
+def run_inventory_sync(ctx):
+    actions = sync_all_channels(ctx)
+    return {
+        "feature": "auto_inventory_sync",
+        "count": len(actions),
+        "actions": actions,
+        "note": "Skeleton inventory sync. Connect Shopify/Amazon APIs inside inventory_sync.py."
+            }
