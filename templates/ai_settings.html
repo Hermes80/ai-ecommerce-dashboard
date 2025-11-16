@@ -55,5 +55,22 @@ function runAiNow() {
     });
 }
 </script>
+<div class="alert alert-warning">
+  <strong>Live Mode:</strong>  
+  When ON, AI will make REAL changes (repricing, listings, etc).
+</div>
 
+<div class="list-group-item d-flex justify-content-between align-items-center bg-danger text-white">
+  <strong>LIVE MODE</strong>
+
+  <div class="form-check form-switch">
+    <input class="form-check-input"
+           type="checkbox"
+           id="live_mode"
+           {% if settings.live_mode %} checked {% endif %}
+           onchange="toggleSetting('live_mode')">
+  </div>
+</div>
+
+<hr>
 {% endblock %}
