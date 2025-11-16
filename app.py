@@ -10,7 +10,7 @@ from ai_settings import load_settings
 from ebay_api import get_active_listings, get_orders
 from datetime import datetime
 from supplier_sourcing import build_supplier_searches
-
+from listing_optimizer import optimize_title, optimize_description
 
 def run_ai_engine():
     settings = load_settings()
@@ -310,6 +310,23 @@ def suppliers_api():
     ctx = build_context()
     result = run_auto_supplier_sourcing(ctx)
     return jsonify(result)
+
+@app.route("/api/ai/optimize-listing", methods=["POST"])
+@login_required
+def ai_optimize_listing():
+    data = request.json or {}
+    title = data.get("title", "")
+    description = data.get("description", "")
+
+    new_title = optimize_title(title)
+    new_desc = optimize_description(description)
+
+    return jsonify({
+        "old_title": title,
+        "new_title": new_title,
+        "old_description": description,
+        "new_description": new_desc
+    })
 # ---------------------------
 # AI Console
 # ---------------------------
