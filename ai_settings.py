@@ -2,7 +2,6 @@ import json
 import os
 
 SETTINGS_FILE = "ai_settings.json"
-
 DEFAULT_SETTINGS = {
     "auto_reprice": False,
     "auto_list": False,
@@ -12,7 +11,10 @@ DEFAULT_SETTINGS = {
     "auto_fulfill": False,
     "auto_message": False,
     "auto_predict": False,
-    "auto_refund": False
+    "auto_refund": False,
+    "live_mode": False   # ⭐ NEW
+}
+
 }
 
 def load_settings():
