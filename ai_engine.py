@@ -3,9 +3,9 @@ from ai_settings import load_settings
 from ebay_api import get_active_listings, get_orders, revise_item_price_trading
 from supplier_sourcing import build_supplier_searches
 
-# Safety switch: start in RECOMMENDATION mode.
-# When you're ready for live repricing, set this to True.
-LIVE_REPRICING = False
+def is_live_mode():
+    settings = load_settings()
+    return settings.get("live_mode", False)
 
 
 def run_ai_engine():
@@ -131,10 +131,10 @@ def run_auto_repricing(ctx):
                 "reason": "No recent sales; suggested small price drop."
             }
 
-            if LIVE_REPRICING:
-                result = revise_item_price_trading(item_id, new_price)
-                action["api_result"] = result
-                action["applied"] = bool(result.get("success"))
+            if is_live_mode():
+    result = revise_item_price_trading(item_id, new_price)
+    action["api_result"] = result
+    action["applied"] = bool(result.get("success"))
 
             actions.append(action)
 
