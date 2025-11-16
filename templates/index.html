@@ -15,3 +15,69 @@
   </li>
   <li class="nav-item">
     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#channelsTab">Channels</button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#inventoryTab">Inventory</button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#aiConsoleTab">AI Console</button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profitTab">Profit</button>
+  </li>
+</ul>
+
+<div class="tab-content">
+
+  <!-- Overview TAB -->
+  <div class="tab-pane fade show active" id="overviewTab">
+    <h4 class="mt-2">Sales (Last 7 Periods)</h4>
+    <canvas id="salesChart" height="120"></canvas>
+
+    <h4 class="mt-4">Orders (Last 7 Periods)</h4>
+    <canvas id="orderChart" height="120"></canvas>
+  </div>
+
+  <!-- Channels TAB -->
+  <div class="tab-pane fade" id="channelsTab">
+    <div id="channels-row" class="row mt-3"></div>
+  </div>
+
+  <!-- Inventory TAB -->
+  <div class="tab-pane fade" id="inventoryTab">
+    <div class="mt-3">
+      <table class="table table-sm table-striped align-middle">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Title</th>
+            <th>Channel</th>
+            <th>Qty</th>
+            <th>Price</th>
+          </tr>
+        </thead>
+        <tbody id="inventory-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- AI Console TAB -->
+  <div class="tab-pane fade" id="aiConsoleTab">
+    <div class="mt-3">
+      <h5>Send Command to AI</h5>
+      <textarea id="ai-command-input" class="form-control mb-2" rows="2" placeholder="Example: Reprice all eBay items"></textarea>
+      <button class="btn btn-success mb-3" onclick="sendAiCommand()">🚀 Send Command</button>
+
+      <h6>Recent Commands</h6>
+      <ul id="ai-log" class="list-group"></ul>
+    </div>
+  </div>
+
+  <!-- Profit TAB -->
+  <div class="tab-pane fade" id="profitTab">
+    <div id="profit-cards" class="row mt-3"></div>
+  </div>
+
+</div>
+
+{% endblock %}
