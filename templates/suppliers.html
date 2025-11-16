@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h2 class="mb-4">🔍 Supplier Discovery</h2>
+<p class="text-muted">These results come from your AI's sourcing engine using your recent eBay sales.</p>
+
+<div id="supplier-results"></div>
+
+<script src="{{ url_for('static', filename='suppliers.js') }}"></script>
+
+{% endblock %}
