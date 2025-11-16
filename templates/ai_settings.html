@@ -4,6 +4,10 @@
 <h2 class="mb-4">⚙️ AI Control Panel</h2>
 <p>Enable or disable AI automation features in real time.</p>
 
+<!-- ⭐ Run AI Engine Button ⭐ -->
+<button class="btn btn-primary mb-4" onclick="runAiNow()">⚡ Run AI Engine Now</button>
+
+<!-- SETTINGS LIST -->
 <div class="list-group">
 
   {% for key, value in settings.items() %}
@@ -22,6 +26,7 @@
 
 </div>
 
+<!-- TOGGLE SETTING FUNCTION -->
 <script>
 function toggleSetting(key) {
     let value = document.getElementById(key).checked;
@@ -33,7 +38,20 @@ function toggleSetting(key) {
     })
     .then(r => r.json())
     .then(data => {
-        console.log("Updated:", data);
+        console.log("Setting updated:", data);
+    });
+}
+</script>
+
+<!-- RUN AI ENGINE NOW -->
+<script>
+function runAiNow() {
+    fetch("/api/ai/run", {
+        method: "POST"
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("AI Engine Executed:\n\n" + JSON.stringify(data.results, null, 2));
     });
 }
 </script>
