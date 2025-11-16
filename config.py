@@ -3,8 +3,8 @@
 # ==========================
 
 # --- OAuth REST API ---
-EBAY_APP_ID = Christop-Storepil-SBX-feb10af0a-be4ae859         # Client ID
-EBAY_CERT_ID = SBX-eb10af0a2a52-db4c-486a-be72-fefb      # Client Secret
+EBAY_APP_ID = "Christop-Storepil-SBX-feb10af0a-be4ae859"         # Client ID
+EBAY_CERT_ID = "SBX-eb10af0a2a52-db4c-486a-be72-fefb"      # Client Secret
 EBAY_REDIRECT_URI = "YOUR_REDIRECT_URI"
 
 # --- Trading API ---
