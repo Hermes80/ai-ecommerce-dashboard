@@ -1,11 +1,17 @@
 from datetime import datetime
 from ai_settings import load_settings
-from ebay_api import get_active_listings, get_orders
+from ebay_api import get_active_listings, get_orders, revise_item_price_trading
+from supplier_sourcing import build_supplier_searches
+
+# Safety switch: start in RECOMMENDATION mode.
+# When you're ready for live repricing, set this to True.
+LIVE_REPRICING = False
+
 
 def run_ai_engine():
     """
     Main AI engine entry point.
-    It reads settings from ai_settings.json and decides which
+    Reads settings from ai_settings.json and decides which
     automation blocks to run.
     """
     settings = load_settings()
@@ -17,35 +23,35 @@ def run_ai_engine():
     if settings.get("auto_reprice"):
         results.append(run_auto_repricing(ctx))
 
-    # 2) Auto listing (placeholder)
+    # 2) Auto listing (stub)
     if settings.get("auto_list"):
         results.append(run_auto_listing(ctx))
 
-    # 3) Auto supplier sourcing
+    # 3) Supplier sourcing
     if settings.get("auto_source"):
         results.append(run_auto_supplier_sourcing(ctx))
 
-    # 4) Auto ordering (placeholder)
+    # 4) Auto ordering (stub)
     if settings.get("auto_order"):
         results.append(run_auto_ordering(ctx))
 
-    # 5) Inventory sync (placeholder)
+    # 5) Inventory sync (stub)
     if settings.get("auto_inventory_sync"):
         results.append(run_inventory_sync(ctx))
 
-    # 6) Auto fulfilment (placeholder)
+    # 6) Auto fulfillment (stub)
     if settings.get("auto_fulfill"):
         results.append(run_auto_fulfill(ctx))
 
-    # 7) Buyer messaging (placeholder)
+    # 7) Buyer messaging (stub)
     if settings.get("auto_message"):
         results.append(run_auto_messaging(ctx))
 
-    # 8) Demand prediction
+    # 8) Demand prediction (simple heuristic)
     if settings.get("auto_predict"):
         results.append(run_ai_prediction(ctx))
 
-    # 9) Refund handling (placeholder)
+    # 9) Refund handling (stub)
     if settings.get("auto_refund"):
         results.append(run_auto_refunds(ctx))
 
@@ -56,14 +62,14 @@ def run_ai_engine():
 
 
 # -------------------------------------------------
-# Build context: gather data once, reuse it in all
+# Build context: gather marketplace data once
 # -------------------------------------------------
 
 def build_context():
     """
     Collects base data the AI needs to make decisions.
     Right now this pulls from eBay only. Shopify/Amazon
-    hooks can be added later.
+    can be added later.
     """
     ebay_listings = get_active_listings()
     ebay_orders = get_orders()
@@ -86,21 +92,13 @@ def build_context():
 
 
 # -------------------------------------------------
-# 1) AUTO REPRICING
+# 1) AUTO REPRICING (with optional live mode)
 # -------------------------------------------------
 
 def run_auto_repricing(ctx):
-    """
-    Very simple example:
-    - Look at eBay listings
-    - Suggest dropping price by 2% on items with no orders
-    This returns a list of RECOMMENDED price updates.
-    Later you can wire this into a real eBay ReviseItem call.
-    """
     listings = ctx["ebay"]["listings"]
     orders = ctx["ebay"]["orders"]
 
-    # Build a set of itemIDs that HAVE sold recently
     sold_item_ids = set()
     for o in orders:
         item_id = o.get("id")
@@ -117,152 +115,136 @@ def run_auto_repricing(ctx):
         try:
             current_price = float(price_raw)
         except ValueError:
-            # skip if we can't parse price
             continue
 
+        # Simple rule: if no recent orders, suggest / apply 2% drop
         if item_id not in sold_item_ids:
-            new_price = round(current_price * 0.98, 2)  # 2% drop
-            actions.append({
+            new_price = round(current_price * 0.98, 2)
+
+            action = {
                 "feature": "auto_reprice",
                 "item_id": item_id,
                 "title": title,
                 "old_price": current_price,
                 "new_price": new_price,
+                "applied": False,
                 "reason": "No recent sales; suggested small price drop."
-            })
+            }
+
+            if LIVE_REPRICING:
+                result = revise_item_price_trading(item_id, new_price)
+                action["api_result"] = result
+                action["applied"] = bool(result.get("success"))
+
+            actions.append(action)
+
+    note_text = (
+        "LIVE repricing is ON. Prices were actually sent to eBay."
+        if LIVE_REPRICING else
+        "LIVE repricing is OFF. These are recommendations only."
+    )
 
     return {
         "feature": "auto_reprice",
         "count": len(actions),
         "actions": actions,
-        "note": "These are recommendations. Wire to real eBay ReviseItem API when ready."
+        "note": note_text
     }
 
 
 # -------------------------------------------------
-# 2) AUTO LISTING (placeholder)
+# 2) AUTO LISTING (stub)
 # -------------------------------------------------
 
 def run_auto_listing(ctx):
-    """
-    Placeholder: in future this would:
-    - Find winning products from supplier feeds
-    - Create draft listings on eBay/Shopify/Amazon
-    For now we just return a stub message.
-    """
     return {
         "feature": "auto_list",
         "actions": [],
-        "note": "Auto listing logic not implemented yet. Add product feed + create listing APIs here."
+        "note": "Auto listing not implemented yet. Connect product feeds + listing APIs here."
     }
 
 
 # -------------------------------------------------
-# 3) SUPPLIER SOURCING (high-level logic)
+# 3) SUPPLIER SOURCING
 # -------------------------------------------------
 
 def run_auto_supplier_sourcing(ctx):
     """
-    High-level sourcing logic:
-    - Look at eBay best-sellers / orders
-    - Identify what categories sell best
-    - (Later) Query supplier APIs to find matching products
+    High-level logic:
+    - Look at eBay orders
+    - Count categories (or fallback to generic)
+    - For top categories, build supplier search URLs
     """
     orders = ctx["ebay"]["orders"]
     category_count = {}
 
     for o in orders:
-        # This is a placeholder; you can extend your ebay_api.get_orders
-        # to include category / SKU info and aggregate here.
         cat = o.get("category", "Unknown")
         category_count[cat] = category_count.get(cat, 0) + 1
 
     sorted_cats = sorted(category_count.items(), key=lambda x: x[1], reverse=True)
 
     recommendations = []
+
     for cat, count in sorted_cats[:5]:
+        supplier_links = build_supplier_searches(cat if cat != "Unknown" else "best selling items")
         recommendations.append({
             "feature": "auto_source",
             "category": cat,
             "order_count": count,
-            "action": "Search suppliers for more items in this category."
+            "suppliers": supplier_links,
+            "action": "Review these supplier search results and pick best offers."
         })
 
     return {
         "feature": "auto_source",
         "count": len(recommendations),
         "actions": recommendations,
-        "note": "Wire this to real supplier APIs (AliExpress, Alibaba, etc.) to fetch offers."
+        "note": "Supplier links generated. Next step: parse prices and compute real ROI."
     }
 
 
 # -------------------------------------------------
-# 4) AUTO ORDERING (placeholder)
+# 4) AUTO ORDERING (stub)
 # -------------------------------------------------
 
 def run_auto_ordering(ctx):
-    """
-    Placeholder auto ordering:
-    - In a real system, this would:
-      * Check low-stock items
-      * Place orders with preferred suppliers
-    """
     return {
         "feature": "auto_order",
         "actions": [],
-        "note": "Auto ordering not implemented yet. Add supplier ordering API calls here."
+        "note": "Auto ordering not implemented yet. Add supplier order API calls here."
     }
 
 
 # -------------------------------------------------
-# 5) INVENTORY SYNC (placeholder)
+# 5) INVENTORY SYNC (stub)
 # -------------------------------------------------
 
 def run_inventory_sync(ctx):
-    """
-    Placeholder inventory sync.
-    Later this would compare inventory across:
-    - eBay
-    - Shopify
-    - Amazon
-    and push consistent stock levels.
-    """
     return {
         "feature": "auto_inventory_sync",
         "actions": [],
-        "note": "Inventory sync not implemented yet. Connect to Shopify/Amazon APIs here."
+        "note": "Inventory sync not implemented yet. Connect Shopify/Amazon APIs here."
     }
 
 
 # -------------------------------------------------
-# 6) AUTO FULFILLMENT (placeholder)
+# 6) AUTO FULFILLMENT (stub)
 # -------------------------------------------------
 
 def run_auto_fulfill(ctx):
-    """
-    Placeholder auto fulfilment:
-    - Would mark orders as shipped and add tracking
-      using marketplace APIs.
-    """
     return {
         "feature": "auto_fulfill",
         "actions": [],
-        "note": "Auto fulfilment not implemented yet. Add shipment + tracking API calls here."
+        "note": "Auto fulfilment not implemented yet. Add shipment/tracking API calls here."
     }
 
 
 # -------------------------------------------------
-# 7) AUTO MESSAGING (placeholder)
+# 7) AUTO MESSAGING (stub)
 # -------------------------------------------------
 
 def run_auto_messaging(ctx):
-    """
-    Placeholder auto messaging logic.
-    In a real system, this could:
-    - Send 'thanks for your order' messages
-    - Follow-up messages
-    - Request feedback
-    """
     return {
         "feature": "auto_message",
         "actions": [],
@@ -275,13 +257,6 @@ def run_auto_messaging(ctx):
 # -------------------------------------------------
 
 def run_ai_prediction(ctx):
-    """
-    Very simple 'prediction':
-    - Count orders per item
-    - Sort by volume
-    - Flag top items as 'high demand'
-    Later you can plug in a real ML model here.
-    """
     orders = ctx["ebay"]["orders"]
     item_count = {}
 
@@ -306,22 +281,15 @@ def run_ai_prediction(ctx):
         "feature": "auto_predict",
         "count": len(predictions),
         "actions": predictions,
-        "note": "Basic heuristic prediction. Replace with real ML model if needed."
+        "note": "Heuristic prediction. Replace with real ML model if needed."
     }
 
 
 # -------------------------------------------------
-# 9) AUTO REFUNDS (placeholder)
+# 9) AUTO REFUNDS (stub)
 # -------------------------------------------------
 
 def run_auto_refunds(ctx):
-    """
-    Placeholder refund logic.
-    Later this could:
-    - Inspect disputes
-    - Auto-approve small refunds
-    - Escalate large ones for manual review
-    """
     return {
         "feature": "auto_refund",
         "actions": [],
