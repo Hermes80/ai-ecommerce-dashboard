@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, session, jsonify
 from datetime import datetime
 from functools import wraps
 from ebay_api import get_active_listings, get_orders
-
+from ai_settings import load_settings, update_setting
 app = Flask(__name__)
 app.secret_key = "super_secret_key_change_this"
 
@@ -108,6 +108,25 @@ def ai_chat_api():
     reply = f"You said: {user_msg}. Real AI is coming."
 
     return jsonify({"reply": reply})
+@app.route("/ai-settings")
+@login_required
+def ai_settings_page():
+    settings = load_settings()
+    return render_template("ai_settings.html", settings=settings)
+
+
+@app.route("/api/ai/settings/update", methods=["POST"])
+@login_required
+def ai_settings_update():
+    data = request.json
+    key = data.get("key")
+    value = data.get("value")
+
+    if key not in load_settings():
+        return jsonify({"error": "Invalid setting"}), 400
+
+    new_settings = update_setting(key, value)
+    return jsonify({"success": True, "settings": new_settings})    
 # ---------------------------
 # AI Console
 # ---------------------------
