@@ -24,6 +24,7 @@ def login_required(f):
 # MOCK DATA (SHAPED FOR REAL APIS LATER)
 
     def get_dashboard_data():
+        def get_dashboard_data():
     from ebay_api import get_active_listings, get_orders
 
     # Get eBay data
@@ -66,7 +67,7 @@ def login_required(f):
         "ai_command_log": ai_command_log[-20:]
     }
     return data
-
+    
 # ---------------------------
 # ROUTES
 # ---------------------------
