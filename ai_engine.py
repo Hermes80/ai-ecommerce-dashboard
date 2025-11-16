@@ -139,9 +139,10 @@ def run_auto_repricing(ctx):
             actions.append(action)
 
     note_text = (
-        "LIVE repricing is ON. Prices were actually sent to eBay."
-        if LIVE_REPRICING else
-        "LIVE repricing is OFF. These are recommendations only."
+    "LIVE repricing is ON. Prices were actually updated on eBay."
+    if is_live_mode() else
+    "LIVE repricing is OFF. These are recommendations only."
+    )
     )
 
     return {
