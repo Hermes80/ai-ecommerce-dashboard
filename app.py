@@ -22,64 +22,48 @@ def login_required(f):
 
 # ---------------------------
 # MOCK DATA (SHAPED FOR REAL APIS LATER)
-# ---------------------------
 
-def get_dashboard_data():
-    # Multi-channel summary (1,2)
-    channel_stats = {
-        "ebay": {
-            "sales_today": 550.00,
-            "orders_today": 9,
-            "active_listings": 120
-        },
-        "shopify": {
-            "sales_today": 650.00,
-            "orders_today": 10,
-            "active_listings": 90
-        },
-        "amazon": {
-            "sales_today": 250.00,
-            "orders_today": 4,
-            "active_listings": 71
-        }
-    }
+    def get_dashboard_data():
+    from ebay_api import get_active_listings, get_orders
 
-    # Overall totals (3,8)
-    total_sales_today = sum(ch["sales_today"] for ch in channel_stats.values())
-    total_orders_today = sum(ch["orders_today"] for ch in channel_stats.values())
-    total_active_listings = sum(ch["active_listings"] for ch in channel_stats.values())
+    # Get eBay data
+    ebay_listings = get_active_listings()
+    ebay_orders = get_orders()
 
-    profit_stats = {
-        "revenue_today": total_sales_today,
-        "fees_today": round(total_sales_today * 0.12, 2),  # fake 12% fee
-        "profit_today": round(total_sales_today * 0.88, 2),
-        "margin_percent": 88
-    }
-
-    # Time-series data for charts (3,8)
-    sales_chart = [200, 400, 600, 450, 900, 700, total_sales_today]
-    order_chart = [5, 8, 12, 10, 18, 16, total_orders_today]
-
-    # Simple inventory sample (4)
-    inventory = [
-        {"sku": "SKU-EB-001", "title": "eBay Test Item 1", "channel": "eBay", "qty": 5, "price": 29.99},
-        {"sku": "SKU-SH-010", "title": "Shopify Shirt", "channel": "Shopify", "qty": 2, "price": 39.99},
-        {"sku": "SKU-AM-777", "title": "Amazon Gadget", "channel": "Amazon", "qty": 12, "price": 19.99},
-        {"sku": "SKU-EB-002", "title": "eBay Test Item 2", "channel": "eBay", "qty": 0, "price": 14.99},
-    ]
+    # Basic totals
+    ebay_sales = len(ebay_orders) * 10.00  # placeholder
+    ebay_orders_count = len(ebay_orders)
+    ebay_listings_count = len(ebay_listings)
 
     data = {
-        "total_sales_today": total_sales_today,
-        "orders_today": total_orders_today,
-        "active_listings": total_active_listings,
+        "total_sales_today": ebay_sales,
+        "orders_today": ebay_orders_count,
+        "active_listings": ebay_listings_count,
         "ai_status": "RUNNING",
         "last_sync": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "channel_stats": channel_stats,
-        "sales_chart": sales_chart,
-        "order_chart": order_chart,
-        "inventory": inventory,
-        "profit_stats": profit_stats,
-        "ai_command_log": ai_command_log[-20:],  # last 20 commands
+
+        "channel_stats": {
+            "ebay": {
+                "sales_today": ebay_sales,
+                "orders_today": ebay_orders_count,
+                "active_listings": ebay_listings_count
+            },
+            "shopify": {"sales_today": 0, "orders_today": 0, "active_listings": 0},
+            "amazon":  {"sales_today": 0, "orders_today": 0, "active_listings": 0},
+        },
+
+        "sales_chart": [4, 6, 8, 2, ebay_sales],
+        "order_chart": [1, 3, 2, 4, ebay_orders_count],
+
+        "inventory": ebay_listings,
+        "profit_stats": {
+            "revenue_today": ebay_sales,
+            "fees_today": round(ebay_sales * 0.12, 2),
+            "profit_today": round(ebay_sales * 0.88, 2),
+            "margin_percent": 88,
+        },
+
+        "ai_command_log": ai_command_log[-20:]
     }
     return data
 
