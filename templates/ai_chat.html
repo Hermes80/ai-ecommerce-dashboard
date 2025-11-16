@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h2 class="mb-3">🧠 AI Conversation Mode</h2>
+
+<div class="card p-3" style="height: 70vh; display: flex; flex-direction: column;">
+    <div id="chat-window" 
+         style="flex: 1; overflow-y: auto; background: #f4f4f4; padding: 10px; border-radius: 10px; margin-bottom: 10px;">
+    </div>
+
+    <div class="input-group">
+        <input id="chat-input" class="form-control" placeholder="Ask the AI anything...">
+        <button class="btn btn-primary" onclick="sendChat()">Send</button>
+    </div>
+</div>
+
+<script>
+function addMessage(text, sender) {
+    let chat = document.getElementById("chat-window");
+    let div = document.createElement("div");
+
+    div.className = sender === "user" ? "alert alert-primary" : "alert alert-secondary";
+    div.innerText = text;
+
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function sendChat() {
+    let msg = document.getElementById("chat-input").value.trim();
+    if (!msg) return;
+
+    addMessage(msg, "user");
+    document.getElementById("chat-input").value = "";
+
+    fetch("/api/ai/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({message: msg})
+    })
+    .then(res => res.json())
+    .then(data => {
+        addMessage(data.reply, "ai");
+    });
+}
+</script>
+
+{% endblock %}
