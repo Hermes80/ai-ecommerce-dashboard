@@ -90,7 +90,21 @@ def index():
 @login_required
 def data():
     return jsonify(get_dashboard_data())
+@app.route("/ai-chat")
+@login_required
+def ai_chat_page():
+    return render_template("ai_chat.html")
+     @app.route("/api/ai/chat", methods=["POST"])
+@login_required
+def ai_chat_api():
+    user_msg = request.json.get("message", "")
+    if not user_msg:
+        return jsonify({"reply": "Please type something."})
 
+    # placeholder AI logic
+    reply = f"You said: {user_msg}. Real AI is coming."
+
+    return jsonify({"reply": reply})
 # ---------------------------
 # AI Console
 # ---------------------------
