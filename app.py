@@ -287,7 +287,14 @@ def ai_settings_update():
         return jsonify({"error": "Invalid setting"}), 400
 
     new_settings = update_setting(key, value)
-    return jsonify({"success": True, "settings": new_settings})    
+    return jsonify({"success": True, "settings": new_settings})
+
+
+@app.route("/api/ai/run", methods=["POST"])
+@login_required
+def ai_run():
+    result = run_ai_engine()
+    return jsonify(result)   
 # ---------------------------
 # AI Console
 # ---------------------------
