@@ -9,6 +9,8 @@ from datetime import datetime
 from ai_settings import load_settings
 from ebay_api import get_active_listings, get_orders
 from datetime import datetime
+from supplier_sourcing import build_supplier_searches
+
 
 def run_ai_engine():
     settings = load_settings()
@@ -294,7 +296,20 @@ def ai_settings_update():
 @login_required
 def ai_run():
     result = run_ai_engine()
-    return jsonify(result)   
+    return jsonify(result)  
+
+@app.route("/suppliers")
+@login_required
+def suppliers_page():
+    return render_template("suppliers.html")
+
+@app.route("/api/suppliers")
+@login_required
+def suppliers_api():
+    from ai_engine import run_auto_supplier_sourcing, build_context
+    ctx = build_context()
+    result = run_auto_supplier_sourcing(ctx)
+    return jsonify(result)
 # ---------------------------
 # AI Console
 # ---------------------------
