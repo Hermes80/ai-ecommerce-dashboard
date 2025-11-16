@@ -1,3 +1,4 @@
+from trend_predictor import get_trending_ebay_items
 from competitor_detection import get_competitor_prices
 from ai_settings import load_settings
 from ebay_api import get_active_listings, get_orders, revise_item_price_trading
