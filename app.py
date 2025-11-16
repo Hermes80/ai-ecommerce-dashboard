@@ -11,6 +11,7 @@ from ebay_api import get_active_listings, get_orders
 from datetime import datetime
 from supplier_sourcing import build_supplier_searches
 from listing_optimizer import optimize_title, optimize_description
+from competitor_detection import get_competitor_prices
 
 def run_ai_engine():
     settings = load_settings()
@@ -327,6 +328,25 @@ def ai_optimize_listing():
         "old_description": description,
         "new_description": new_desc
     })
+
+@app.route("/competitors")
+@login_required
+def competitors_page():
+    return render_template("competitors.html")
+
+
+@app.route("/api/competitors")
+@login_required
+def competitors_api():
+    keyword = request.args.get("keyword", "")
+    if not keyword:
+        return jsonify({"items": []})
+
+    comps = get_competitor_prices(keyword)
+    if isinstance(comps, dict) and "error" in comps:
+        return jsonify({"items": [], "error": comps["error"]})
+
+    return jsonify({"items": comps})
 # ---------------------------
 # AI Console
 # ---------------------------
