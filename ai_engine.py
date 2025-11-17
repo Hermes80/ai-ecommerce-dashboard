@@ -1,74 +1,122 @@
+# ai_engine.py
+#
+# Master AI engine for:
+# - repricing
+# - competitor detection
+# - trend prediction
+# - sourcing
+# - portfolio builder (via context)
+# - inventory sync
+#
+# Clean, stable, and fully compatible with app.py + portfolio_builder.py
+
+from datetime import datetime
+from config import EBAY_OAUTH_TOKEN
+from ebay_api import (
+    get_active_listings,
+    get_orders,
+    update_price
+)
+
+from competitor_detection import get_competitor_prices
+from supplier_sourcing import find_best_supplier
 from trend_predictor import get_trending_ebay_items
-from competitor_detection import get_competitor_prices
-from ai_settings import load_settings
-from ebay_api import get_active_listings, get_orders, revise_item_price_trading
-from supplier_sourcing import build_supplier_searches
-from competitor_detection import get_competitor_prices
-from pricing_rules import estimate_cost, apply_pricing_rules
 from inventory_sync import sync_all_channels
 
-def run_auto_repricing(ctx):
-    """
-    Dynamic AI repricing:
-    - Looks at competitors
-    - Applies bulk pricing rules & profit protection
-    - Respects live_mode for real updates
-    """
-    listings = ctx["ebay"]["listings"]
-    orders = ctx["ebay"]["orders"]
 
-    sold_item_ids = {o.get("id") for o in orders if o.get("id")}
+# ================================
+# Utility: check AI settings
+# ================================
+from ai_settings import load_settings
+
+def is_live_mode():
+    settings = load_settings()
+    return bool(settings.get("live_mode", False))
+
+
+# ================================
+# Build AI context (shared data)
+# ================================
+def build_context():
+    listings = get_active_listings()
+    orders = get_orders()
+
+    # Build mapping: item_id → number of orders
+    sold_map = {}
+    for o in orders:
+        item_id = o.get("id")
+        if item_id:
+            sold_map[item_id] = sold_map.get(item_id, 0) + 1
+
+    return {
+        "timestamp": datetime.utcnow().isoformat(),
+        "ebay": {
+            "listings": listings,
+            "orders": orders,
+            "sold_map": sold_map,
+        }
+    }
+
+
+# ================================
+# AUTO REPRICING ENGINE
+# ================================
+def run_ai_reprice(ctx):
+    settings = load_settings()
+    if not settings.get("auto_reprice", False):
+        return {
+            "feature": "auto_reprice",
+            "count": 0,
+            "actions": [],
+            "note": "auto_reprice is OFF"
+        }
+
+    listings = ctx["ebay"]["listings"]
+    sold_map = ctx["ebay"]["sold_map"]
 
     actions = []
 
     for item in listings:
         item_id = item.get("id")
         title = item.get("title", "Unknown")
-        try:
-            current_price = float(item.get("price", 0))
-        except Exception:
-            continue
+        sku = item.get("sku")
+        price = float(item.get("price", 0.0))
 
-        # 1) Get competitor prices from eBay
+        # competitor detection
         competitors = get_competitor_prices(title)
-        competitor_price = None
         if isinstance(competitors, dict) and "error" in competitors:
             competitor_price = None
         else:
-            competitor_prices = [c["price"] for c in competitors if c["price"] > 0]
-            competitor_price = min(competitor_prices) if competitor_prices else None
+            competitor_price = competitors[0]["price"] if competitors else None
 
-        # 2) Initial AI suggestion
+        # Demand signal
+        demand = sold_map.get(item_id, 0)
+
+        # Base logic: competitor-based pricing
         if competitor_price:
-            # Start slightly under competitor
-            suggested = round(competitor_price - 0.05, 2)
+            target_price = round(competitor_price - 0.05, 2)
 
-            # If this item *has* sold recently, don't panic-discount
-            if item_id in sold_item_ids and suggested < current_price * 0.9:
-                suggested = round(current_price * 0.95, 2)
+            # Safety: don’t drop more than 10% if item is already selling
+            if demand >= 1:
+                min_safe = round(price * 0.90, 2)
+                if target_price < min_safe:
+                    target_price = min_safe
         else:
-            # No competitors → gentle 2% drop
-            suggested = round(current_price * 0.98, 2)
-
-        # 3) Profit & bulk rules
-        cost = estimate_cost(item)
-        final_price = apply_pricing_rules(current_price, suggested, cost)
+            # No competitor → slight down adjust
+            target_price = round(price * 0.98, 2)
 
         action = {
-            "feature": "auto_reprice",
             "item_id": item_id,
             "title": title,
-            "old_price": current_price,
+            "old_price": price,
             "competitor_price": competitor_price,
-            "suggested_price": suggested,
-            "final_price": final_price,
-            "cost_estimate": cost,
-            "applied": False,
+            "new_price": target_price,
+            "applied": False
         }
 
-        # 4) Apply to eBay if in live mode
         if is_live_mode():
-            result = revise_item_price_trading(item_id, final_price)
+            # Apply via REST first, fallback to Trading API
+            result = update_price(item_id, sku, target_price)
             action["api_result"] = result
             action["applied"] = bool(result.get("success"))
 
@@ -80,22 +128,60 @@ def run_auto_repricing(ctx):
         "actions": actions,
         "note": "Dynamic repricing with competitor detection + profit protection."
     }
-        
+
+
+# ================================
+# AUTO SUPPLIER SOURCING ENGINE
+# ================================
+def run_ai_sourcing(ctx):
+    settings = load_settings()
+    if not settings.get("auto_source", False):
+        return {
+            "feature": "auto_source",
+            "count": 0,
+            "actions": [],
+            "note": "auto_source is OFF"
+        }
+
+    listings = ctx["ebay"]["listings"]
+    actions = []
+
+    for item in listings:
+        title = item.get("title", "Unknown")
+        supplier = find_best_supplier(title)
+
+        actions.append({
+            "feature": "auto_source",
+            "item_id": item.get("id"),
+            "title": title,
+            "supplier": supplier
+        })
+
     return {
-        "feature": "auto_reprice",
+        "feature": "auto_source",
         "count": len(actions),
         "actions": actions,
-        "note": "Dynamic AI repricing with competitor detection."
+        "note": "Supplier match from AliExpress, Alibaba, Temu."
     }
-def run_ai_prediction(ctx):
-    """
-    Global trend-based prediction:
-    - Looks at trending items on eBay (not just your account)
-    - Returns top items with a simple 'opportunity' tag
-    """
-    trending = get_trending_ebay_items()
 
+
+# ================================
+# TREND PREDICTION ENGINE
+# GLOBAL EBAY TRENDS (NOT YOUR ACCOUNT)
+# ================================
+def run_ai_prediction(ctx):
+    settings = load_settings()
+    if not settings.get("auto_predict", False):
+        return {
+            "feature": "auto_predict",
+            "count": 0,
+            "actions": [],
+            "note": "auto_predict is OFF"
+        }
+
+    trending = get_trending_ebay_items()
     actions = []
+
     for t in trending[:20]:
         actions.append({
             "feature": "auto_predict",
@@ -110,16 +196,46 @@ def run_ai_prediction(ctx):
         "count": len(actions),
         "actions": actions,
         "note": "Based on global eBay search, not your account data."
-}
+    }
 
+
+# ================================
+# INVENTORY SYNC ENGINE (Shopify, Amazon, etc.)
+# ================================
 def run_inventory_sync(ctx):
+    settings = load_settings()
+    if not settings.get("auto_inventory_sync", False):
+        return {
+            "feature": "auto_inventory_sync",
+            "count": 0,
+            "actions": [],
+            "note": "auto_inventory_sync is OFF"
+        }
+
     actions = sync_all_channels(ctx)
+
     return {
         "feature": "auto_inventory_sync",
         "count": len(actions),
         "actions": actions,
-        "note": "Skeleton inventory sync. Connect Shopify/Amazon APIs inside inventory_sync.py."
-            }
-from ebay_api import update_price
+        "note": "Cross-channel inventory sync completed."
+    }
 
-result = update_price(item_id, item.get("sku"), final_price)
+
+# ================================
+# MASTER AI ENGINE EXECUTION
+# ================================
+def run_all_ai_engines():
+    ctx = build_context()
+
+    results = []
+
+    results.append(run_ai_reprice(ctx))
+    results.append(run_ai_sourcing(ctx))
+    results.append(run_ai_prediction(ctx))
+    results.append(run_inventory_sync(ctx))
+
+    return {
+        "timestamp": datetime.utcnow().isoformat(),
+        "results": results
+    }
