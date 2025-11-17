@@ -12,6 +12,8 @@ from datetime import datetime
 from supplier_sourcing import build_supplier_searches
 from listing_optimizer import optimize_title, optimize_description
 from competitor_detection import get_competitor_prices
+from ai_engine import build_context
+from portfolio_builder import build_portfolio
 
 def run_ai_engine():
     settings = load_settings()
@@ -347,6 +349,19 @@ def competitors_api():
         return jsonify({"items": [], "error": comps["error"]})
 
     return jsonify({"items": comps})
+
+@app.route("/portfolio")
+@login_required
+def portfolio_page():
+    return render_template("portfolio.html")
+
+
+@app.route("/api/portfolio")
+@login_required
+def portfolio_api():
+    ctx = build_context()
+    result = build_portfolio(ctx)
+    return jsonify(result)
 # ---------------------------
 # AI Console
 # ---------------------------
