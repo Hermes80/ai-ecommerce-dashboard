@@ -1,25 +1,30 @@
-import urllib.parse
+# supplier_sourcing.py
+#
+# Searches AliExpress, Alibaba, and Temu
+# using simple keyword-based scraping via RapidAPI-style endpoints.
+# You may replace these sample URLs with real supplier APIs.
 
-def build_supplier_searches(keyword):
-    """
-    Build search URLs for AliExpress, Alibaba, and Temu
-    based on a keyword or category name.
-    This does NOT scrape yet, just returns where to look.
-    """
-    q = urllib.parse.quote_plus(keyword)
+import requests
 
-    suppliers = [
-        {
-            "platform": "AliExpress",
-            "search_url": f"https://www.aliexpress.com/wholesale?SearchText={q}"
-        },
-        {
-            "platform": "Alibaba",
-            "search_url": f"https://www.alibaba.com/trade/search?SearchText={q}"
-        },
-        {
-            "platform": "Temu",
-            "search_url": f"https://www.temu.com/search_result.html?search_key={q}"
-        }
+def find_best_supplier(query):
+    """
+    Returns best supplier match:
+    {
+        "source": "AliExpress",
+        "title": "...",
+        "price": 3.25,
+        "url": "..."
+    }
+    """
+
+    sources = [
+        ("AliExpress", f"https://api-supplier.example.com/aliexpress?q={query}"),
+        ("Alibaba",    f"https://api-supplier.example.com/alibaba?q={query}"),
+        ("Temu",       f"https://api-supplier.example.com/temu?q={query}")
     ]
-    return suppliers
+
+    best = None
+
+    for name, url in sources:
+        try:
+            r = requests.get(url, timeout
