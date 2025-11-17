@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h2 class="mb-4">📦 Smart AI Portfolio</h2>
+<p class="text-muted">
+  Your products grouped into Core Winners, Growth Picks, Risky Bets, plus external opportunities.
+</p>
+
+<h4 class="mt-4">🏆 Core Winners</h4>
+<div id="core-list"></div>
+
+<h4 class="mt-4">🚀 Growth Picks</h4>
+<div id="growth-list"></div>
+
+<h4 class="mt-4">⚠️ Risky / Weak Items</h4>
+<div id="risky-list"></div>
+
+<h4 class="mt-4">🌍 External Opportunities (Global eBay)</h4>
+<div id="external-list"></div>
+
+<script src="{{ url_for('static', filename='portfolio.js') }}"></script>
+
+{% endblock %}
