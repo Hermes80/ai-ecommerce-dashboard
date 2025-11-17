@@ -81,34 +81,7 @@ def run_auto_repricing(ctx):
         "note": "Dynamic repricing with competitor detection + profit protection."
     }
         # AI Dynamic Pricing Logic
-        if competitor_price:
-            # Target slightly below competitor
-            target_price = round(competitor_price - 0.05, 2)
-
-            # Safety: don’t drop more than 10% unless item is cold
-            if target_price < price * 0.9 and item_id in sold_item_ids:
-                target_price = round(price * 0.95, 2)
-
-        else:
-            # No competitors → fallback rule
-            target_price = round(price * 0.98, 2)
-
-        action = {
-            "item_id": item_id,
-            "title": title,
-            "old_price": price,
-            "competitor_price": competitor_price,
-            "new_price": target_price,
-            "applied": False
-        }
-
-        if is_live_mode():
-            result = revise_item_price_trading(item_id, target_price)
-            action["api_result"] = result
-            action["applied"] = bool(result.get("success"))
-
-        actions.append(action)
-
+        
     return {
         "feature": "auto_reprice",
         "count": len(actions),
