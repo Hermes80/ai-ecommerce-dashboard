@@ -362,6 +362,11 @@ def portfolio_api():
     ctx = build_context()
     result = build_portfolio(ctx)
     return jsonify(result)
+    
+@app.route("/ai-settings")
+@login_required
+def ai_settings():
+    return render_template("ai-settings.html")
 # ---------------------------
 # AI Console
 # ---------------------------
