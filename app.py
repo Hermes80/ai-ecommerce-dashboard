@@ -9,7 +9,7 @@ from datetime import datetime
 from ai_settings import load_settings
 from ebay_api import get_active_listings, get_orders
 from datetime import datetime
-from supplier_sourcing import build_supplier_searches
+from supplier_sourcing import find_best_supplier
 from listing_optimizer import optimize_title, optimize_description
 from competitor_detection import get_competitor_prices
 from ai_engine import build_context
