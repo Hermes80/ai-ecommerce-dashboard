@@ -148,3 +148,6 @@ def run_inventory_sync(ctx):
         "actions": actions,
         "note": "Skeleton inventory sync. Connect Shopify/Amazon APIs inside inventory_sync.py."
             }
+from ebay_api import update_price
+
+result = update_price(item_id, item.get("sku"), final_price)
