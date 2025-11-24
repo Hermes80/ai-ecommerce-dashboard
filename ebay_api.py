@@ -3,9 +3,7 @@ import xml.etree.ElementTree as ET
 from config import (
     EBAY_APP_ID,
     EBAY_CERT_ID,
-    EBAY_OAUTH_TOKEN,
-    EBAY_API_ENDPOINT,
-    EBAY_REST_ENDPOINT,
+    
 )
 
 # -------------------------------------------------------
