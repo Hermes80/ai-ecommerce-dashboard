@@ -367,6 +367,11 @@ def portfolio_api():
 @login_required
 def ai_settings():
     return render_template("ai-settings.html")
+
+@app.route("/deletion", methods=["GET", "POST"])
+def deletion_notification():
+    return "OK", 200
+
 # ---------------------------
 # AI Console
 # ---------------------------
