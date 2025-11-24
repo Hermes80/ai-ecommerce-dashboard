@@ -1,10 +1,6 @@
 import requests
 import xml.etree.ElementTree as ET
-from config import (
-    EBAY_APP_ID,
-    EBAY_CERT_ID,
-    EBAY_REDIRECT_URI 
-)
+from config import EBAY_APP_ID, EBAY_CERT_ID, EBAY_REDIRECT_URI, EBAY_REFRESH_TOKEN
 
 # -------------------------------------------------------
 # 1) Get Active Listings (Sell Inventory or Trading API)
