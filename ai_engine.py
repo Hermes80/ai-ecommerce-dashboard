@@ -11,9 +11,9 @@
 # Clean, stable, and fully compatible with app.py + portfolio_builder.py
 
 from datetime import datetime
-from config import EBAY_APP_ID
-                   EBAY_CERT_ID
-                   EBAY_REDIRECT_URI 
+from access_token import get_access_token
+    token = get_access_token()         
+                 
 from ebay_api import (
     get_active_listings,
     get_orders,
