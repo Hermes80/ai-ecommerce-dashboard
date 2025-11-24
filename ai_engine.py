@@ -1,38 +1,97 @@
-from dotenv import load_dotenv
-import os
-
-# Load .env file from project root
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-env_path = os.path.join(BASE_DIR, ".env")
-load_dotenv(env_path)
-
-# Core eBay OAuth app credentials
-EBAY_APP_ID = os.getenv("EBAY_APP_ID")          # aka Client ID
-EBAY_CERT_ID = os.getenv("EBAY_CERT_ID")        # aka Client Secret
-
-# Redirect URI registered in eBay Dev Portal
-EBAY_REDIRECT_URI = os.getenv("EBAY_REDIRECT_URI")
-
-# Long-lived refresh token you got after user consent
-EBAY_REFRESH_TOKEN = os.getenv("EBAY_REFRESH_TOKEN")
-
-# OAuth + API endpoints (prod by default)
-EBAY_OAUTH_URL = os.getenv(
-    "EBAY_OAUTH_URL",
-    "https://api.ebay.com/identity/v1/oauth2/token"
+import json
+import time
+import requests
+from datetime import datetime
+from competitor_detection import analyze_competitors
+from listing_optimizer import optimize_listing
+from trend_predictor import predict_trends
+from pricing_rules import apply_pricing_rules
+from supplier_sourcing import find_suppliers
+from inventory_sync import sync_inventory
+from portfolio_builder import rebalance_portfolio
+from config import (
+    EBAY_APP_ID,
+    EBAY_CERT_ID,
+    EBAY_REFRESH_TOKEN,
+    EBAY_OAUTH_URL,
+    EBAY_REST_URL
 )
+from ebay_api import get_active_listings, get_orders
 
-EBAY_REST_URL = os.getenv(
-    "EBAY_REST_URL",
-    "https://api.ebay.com"
-)
 
-# Optional: basic sanity checks (won't crash, just warn)
-def _warn_if_missing(name, value):
-    if not value:
-        print(f"[CONFIG WARNING] {name} is not set. Check your .env file.")
+# -----------------------------------------
+#   TOKEN HANDLING: DYNAMIC ACCESS TOKEN
+# -----------------------------------------
 
-_warn_if_missing("EBAY_APP_ID", EBAY_APP_ID)
-_warn_if_missing("EBAY_CERT_ID", EBAY_CERT_ID)
-_warn_if_missing("EBAY_REDIRECT_URI", EBAY_REDIRECT_URI)
-_warn_if_missing("EBAY_REFRESH_TOKEN", EBAY_REFRESH_TOKEN)
+def base64_credentials():
+    import base64
+    creds = f"{EBAY_APP_ID}:{EBAY_CERT_ID}"
+    return base64.b64encode(creds.encode()).decode()
+
+
+def get_access_token():
+    """Generate a fresh eBay OAuth Access Token using the REFRESH TOKEN."""
+    payload = {
+        "grant_type": "refresh_token",
+        "refresh_token": EBAY_REFRESH_TOKEN,
+        "scope": "https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory"
+    }
+
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Authorization": "Basic " + base64_credentials()
+    }
+
+    response = requests.post(EBAY_OAUTH_URL, headers=headers, data=payload)
+
+    if response.status_code != 200:
+        print("Failed to refresh access token:", response.text)
+        return None
+
+    return response.json().get("access_token")
+
+
+# -------------------------------------------------
+#   HERMES08 AI ENGINE: MAIN AUTOMATION FUNCTIONS
+# -------------------------------------------------
+
+def analyze_listings():
+    """Pull all active listings and run AI analysis."""
+    access_token = get_access_token()
+    if not access_token:
+        return {"error": "Unable to generate access token"}
+
+    listings = get_active_listings(access_token)
+    if "error" in listings:
+        return listings
+
+    results = []
+    for item in listings.get("listings", []):
+        item_result = {
+            "item_id": item.get("itemId"),
+            "title": item.get("title"),
+            "optimization": optimize_listing(item),
+            "competitor_analysis": analyze_competitors(item),
+            "trend_prediction": predict_trends(item),
+        }
+        results.append(item_result)
+
+    return {"results": results}
+
+
+def process_orders():
+    """Fetch orders and run automation workflows."""
+    access_token = get_access_token()
+    if not access_token:
+        return {"error": "Unable to generate access token"}
+
+    orders = get_orders(access_token)
+    if "error" in orders:
+        return orders
+
+    processed = []
+    for order in orders.get("orders", []):
+        processed.append({
+            "orderId": order.get("orderId"),
+            "status": order.get("orderFulfillmentStatus"),
+            "buyer": order.get("buyerUsername
