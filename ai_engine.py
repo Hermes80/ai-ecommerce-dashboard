@@ -11,7 +11,7 @@
 # Clean, stable, and fully compatible with app.py + portfolio_builder.py
 
 from datetime import datetime
-from config import EBAY_OAUTH_TOKEN
+from config import EBAY_APP_ID = Christop-Storepil-PRD-86e535c40-6a1b1745
 from ebay_api import (
     get_active_listings,
     get_orders,
