@@ -1,97 +1,111 @@
-import json
 import time
+import json
 import requests
-from datetime import datetime
-from competitor_detection import analyze_competitors
-from listing_optimizer import optimize_listing
-from trend_predictor import predict_trends
-from pricing_rules import apply_pricing_rules
-from supplier_sourcing import find_suppliers
-from inventory_sync import sync_inventory
-from portfolio_builder import rebalance_portfolio
+from ebay_api import (
+    get_active_listings,
+    get_orders,
+    update_listing_price,
+)
 from config import (
     EBAY_APP_ID,
     EBAY_CERT_ID,
     EBAY_REFRESH_TOKEN,
     EBAY_OAUTH_URL,
-    EBAY_REST_URL
 )
-from ebay_api import get_active_listings, get_orders
+import base64
 
-
-# -----------------------------------------
-#   TOKEN HANDLING: DYNAMIC ACCESS TOKEN
-# -----------------------------------------
-
+# ======================================================
+# Generate Basic Authorization Header
+# ======================================================
 def base64_credentials():
-    import base64
     creds = f"{EBAY_APP_ID}:{EBAY_CERT_ID}"
     return base64.b64encode(creds.encode()).decode()
 
-
+# ======================================================
+# Get fresh Access Token from Refresh Token
+# ======================================================
 def get_access_token():
-    """Generate a fresh eBay OAuth Access Token using the REFRESH TOKEN."""
     payload = {
         "grant_type": "refresh_token",
         "refresh_token": EBAY_REFRESH_TOKEN,
-        "scope": "https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory"
+        "scope": "https://api.ebay.com/oauth/api_scope"
     }
 
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": "Basic " + base64_credentials()
+        "Authorization": "Basic " + base64_credentials(),
     }
 
     response = requests.post(EBAY_OAUTH_URL, headers=headers, data=payload)
 
     if response.status_code != 200:
-        print("Failed to refresh access token:", response.text)
+        print("❌ ERROR refreshing token:", response.text)
         return None
 
-    return response.json().get("access_token")
+    data = response.json()
+    return data.get("access_token")
 
 
-# -------------------------------------------------
-#   HERMES08 AI ENGINE: MAIN AUTOMATION FUNCTIONS
-# -------------------------------------------------
+# ======================================================
+# AI Pricing Engine
+# ======================================================
+def analyze_listing(listing):
+    """
+    Basic AI pricing logic placeholder
+    """
+    current_price = float(listing.get("price", 0))
+    sell_through = float(listing.get("sell_through_rate", 0))
 
-def analyze_listings():
-    """Pull all active listings and run AI analysis."""
-    access_token = get_access_token()
-    if not access_token:
-        return {"error": "Unable to generate access token"}
+    new_price = current_price
 
-    listings = get_active_listings(access_token)
-    if "error" in listings:
-        return listings
+    if sell_through < 0.3:
+        new_price = current_price * 0.97
+    elif sell_through > 0.7:
+        new_price = current_price * 1.03
 
-    results = []
-    for item in listings.get("listings", []):
-        item_result = {
-            "item_id": item.get("itemId"),
-            "title": item.get("title"),
-            "optimization": optimize_listing(item),
-            "competitor_analysis": analyze_competitors(item),
-            "trend_prediction": predict_trends(item),
-        }
-        results.append(item_result)
-
-    return {"results": results}
+    return round(new_price, 2)
 
 
-def process_orders():
-    """Fetch orders and run automation workflows."""
-    access_token = get_access_token()
-    if not access_token:
-        return {"error": "Unable to generate access token"}
+# ======================================================
+# Main Loop
+# ======================================================
+def run_engine_loop():
+    """
+    Runs the AI engine continuously, updating eBay listings.
+    """
 
-    orders = get_orders(access_token)
-    if "error" in orders:
-        return orders
+    while True:
+        print("🔄 Refreshing access token...")
+        access_token = get_access_token()
 
-    processed = []
-    for order in orders.get("orders", []):
-        processed.append({
-            "orderId": order.get("orderId"),
-            "status": order.get("orderFulfillmentStatus"),
-            "buyer": order.get("buyerUsername
+        if not access_token:
+            print("❌ Could not refresh access token. Retrying in 60 seconds...")
+            time.sleep(60)
+            continue
+
+        print("🔄 Fetching active listings...")
+        listings = get_active_listings(access_token)
+
+        if not listings:
+            print("⚠️ No listings found or fetch error.")
+        else:
+            print(f"📦 Retrieved {len(listings)} listings.")
+
+            for listing in listings:
+                new_price = analyze_listing(listing)
+                listing_id = listing.get("listing_id")
+
+                if listing_id and new_price:
+                    print(f"💲 Updating {listing_id} → New Price {new_price}")
+                    update_listing_price(listing_id, new_price, access_token)
+
+        print("⏳ Sleeping 10 minutes...")
+        time.sleep(600)
+
+
+# ======================================================
+# Entrypoint
+# ======================================================
+if __name__ == "__main__":
+    print("🤖 Hermes08 AI Engine Started")
+    run_engine_loop()
