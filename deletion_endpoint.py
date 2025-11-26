@@ -1,24 +1,48 @@
+from flask import Flask, request, jsonify
 import hashlib
-from flask import Blueprint, request, jsonify
 
-deletion_bp = Blueprint('deletion_bp', __name__)
+# ===========================
+# YOUR VERIFICATION TOKEN
+# ===========================
+VERIFICATION_TOKEN = "hermes08_verification_token_1234567890_ABCDEF"
 
-# Your exact settings — MUST MATCH eBay portal
+# ===========================
+# YOUR HTTPS ENDPOINT URL
+# Must EXACTLY match what you gave eBay
+# ===========================
 ENDPOINT_URL = "https://storepilot.online/deletion"
-VERIFICATION_TOKEN = "YOUR_VERIFICATION_TOKEN"
 
-@deletion_bp.route("/deletion", methods=["GET"])
-def deletion_verification():
-    challenge_code = request.args.get("challenge_code", "")
+app = Flask(__name__)
 
-    if not challenge_code:
-        return jsonify({"error": "challenge_code missing"}), 400
+# ===========================
+# HASHING HELPER
+# ===========================
+def compute_challenge_response(challenge_code):
+    """
+    eBay requires SHA256( challengeCode + verificationToken + endpointURL )
+    """
+    combined = challenge_code + VERIFICATION_TOKEN + ENDPOINT_URL
+    hashed = hashlib.sha256(combined.encode()).hexdigest()
+    return hashed
 
-    # Concatenate EXACT order:
-    # challengeCode + verificationToken + endpointURL
-    raw_string = challenge_code + VERIFICATION_TOKEN + ENDPOINT_URL
+# ===========================
+# ENDPOINT ROUTE
+# ===========================
+@app.route("/deletion", methods=["GET", "POST"])
+def deletion_handler():
+    # Step 1 — eBay validation GET challenge
+    challenge_code = request.args.get("challenge_code")
+    if challenge_code:
+        print(f"Received challenge_code: {challenge_code}")
+        response = compute_challenge_response(challenge_code)
+        return jsonify({"challengeResponse": response}), 200
 
-    # Generate SHA-256
-    hashed = hashlib.sha256(raw_string.encode()).hexdigest()
+    # Step 2 — Actual deletion notifications (POST)
+    print("Received deletion notification:", request.json)
+    return jsonify({"status": "received"}), 200
 
-    return jsonify({"challengeResponse": hashed}), 200
+# ===========================
+# RUN STANDALONE FOR TESTING
+# ===========================
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5001)
