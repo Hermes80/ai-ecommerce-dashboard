@@ -14,6 +14,8 @@ from listing_optimizer import optimize_title, optimize_description
 from competitor_detection import get_competitor_prices
 from ai_engine import build_context
 from portfolio_builder import build_portfolio
+from deletion_endpoint import deletion_bp
+app.register_blueprint(deletion_bp)
 
 def run_ai_engine():
     settings = load_settings()
