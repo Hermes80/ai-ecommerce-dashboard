@@ -10,7 +10,7 @@ VERIFICATION_TOKEN = "hermes08_verification_token_1234567890_ABCDEF"
 # YOUR HTTPS ENDPOINT URL
 # Must EXACTLY match what you gave eBay
 # ===========================
-ENDPOINT_URL = "https://storepilot.online/deletion"
+ENDPOINT_URL="Www.storepilot.online" 
 
 app = Flask(__name__)
 
