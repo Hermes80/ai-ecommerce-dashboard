@@ -1,5 +1,5 @@
 from flask import Flask, render_template, jsonify
-from ai_engine import run_ai_tasks, build_context
+from ai_engine import run_ai_loop   # or whatever your real main entry function is
 from ebay_api import get_active_listings, get_orders
 
 app = Flask(__name__)
