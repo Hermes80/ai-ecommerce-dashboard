@@ -11,5 +11,5 @@ EBAY_OAUTH_URL = "https://api.ebay.com/identity/v1/oauth2/token"
 EBAY_REST_URL = "https://api.ebay.com"
 
 # Tokens (filled after exchange)
-EBAY_REFRESH_TOKEN = ""
-EBAY_ACCESS_TOKEN = ""
+EBAY_REFRESH_TOKEN = "v^1.1#i^1#p^3#f^0#I^3#r^1#t^Ul4xMF85OkU3RDI1NUM3RDUzQ0JBQjdFRUE4QzhGOUE2NTE3NDYzXzFfMSNFXjI2MA=="
+EBAY_ACCESS_TOKEN = "v^1.1#i^1#f^0#I^3#r^0#p^3#t^H4sIAAAAAAAA/........."
