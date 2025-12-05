@@ -1,0 +1,13 @@
+[Unit]
+Description=AI E-Commerce Dashboard (Flask)
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/ai-ecommerce-dashboard
+Environment="PATH=/home/ubuntu/ai-ecommerce-dashboard/venv/bin"
+ExecStart=/home/ubuntu/ai-ecommerce-dashboard/venv/bin/python3 app.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
