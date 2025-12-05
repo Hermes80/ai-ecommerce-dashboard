@@ -1,0 +1,13 @@
+[Unit]
+Description=Hermes08 AI Engine Loop
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/ai-ecommerce-dashboard
+Environment="PATH=/home/ubuntu/ai-ecommerce-dashboard/venv/bin"
+ExecStart=/home/ubuntu/ai-ecommerce-dashboard/venv/bin/python3 ai_engine.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
