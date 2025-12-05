@@ -1,0 +1,13 @@
+[Unit]
+Description=Hermes AI Engine
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/ai-ecommerce-dashboard
+ExecStart=/home/ubuntu/ai-ecommerce-dashboard/venv/bin/python3 ai_engine.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
